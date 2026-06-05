@@ -1,0 +1,21 @@
+# Ambiente virtual
+env/
+venv/
+ENV/
+
+# Django - Archivos generados automáticamente
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Python - Archivos compilados de caché
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Carpetas de diseño o temporales del sistema operativo
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
