@@ -1,0 +1,15 @@
+{% extends 'layout.html' %}
+{% load static %}
+
+{% block titulo %}Ejecutar simulación {% endblock %}
+
+{% block estilos %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style_ejecucion.css' %}" />
+{% endblock %}
+
+{% block body_class %}pantalla-ejecucion{% endblock %}
+
+{% block contenido %}
+    <h1>Ejecutar simulación</h1>
+    <p>Configura los parámetros de la simulación y ejecútala aquí.</p>
+{% endblock %}

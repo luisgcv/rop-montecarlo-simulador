@@ -16,7 +16,10 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from interfaz import views
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
+    path('',views.configurar_perfil,name="configurar_perfil"),
+    path('ejecutar_simulacion/',views.ejecutar_simulacion,name="ejecutar_simulacion"),
+    path('mostrar_resultados/',views.mostrar_resultados,name="mostrar_resultados"),
 ]

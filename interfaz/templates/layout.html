@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rop Simulación | {% block titulo %}{% endblock %}</title>
+
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/style_layout.css' %}" />
+    
+    {% block estilos %}{% endblock %}
+</head>
+<body class="{% block body_class %}fondo-general{% endblock %}">
+
+    <main id="contenido">
+        <div class="cajaContenido">
+            {% block contenido %}
+            {% endblock %}
+        </div>
+    </main>
+
+</body>
+</html>
