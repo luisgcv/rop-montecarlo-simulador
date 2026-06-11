@@ -1,7 +1,7 @@
 {% extends 'layout.html' %}
 {% load static %}
 
-{% block titulo %}Configurar perfilas de 333{% endblock %}
+{% block titulo %}Configurar perfil{% endblock %}
 
 {% block estilos %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/style_perfil.css' %}" />
@@ -11,5 +11,52 @@
 
 {% block contenido %}
     <h1>Configurar perfil</h1>
-    <p>Personaliza tu información de usuario aquí.</p>
+
+    <form method="post">
+      {% csrf_token %}
+
+      <div class="campo">
+        <label>Salario bruto mensual (₡)</label>
+        <input type="number" name="salario" min="200000" max="5000000"
+               step="50000" value="850000" required>
+      </div>
+
+      <div class="campo">
+        <label>Edad actual</label>
+        <input type="number" name="edad" min="18" max="64" value="35" required>
+      </div>
+
+      <div class="campo">
+        <label>Edad de retiro proyectada</label>
+        <input type="number" name="edad_retiro" min="55" max="70" value="65" required>
+      </div>
+
+      <div class="campo">
+        <label>Saldo acumulado actual (₡)</label>
+        <input type="number" name="saldo" min="0" value="0" required>
+      </div>
+
+      <div class="campo">
+        <label>Operadora de pensiones</label>
+        <select name="operadora" required>
+          {% for op in operadoras %}
+            <option value="{{ op }}">{{ op }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="campo">
+        <label>Densidad de cotización (% de meses cotizados al año)</label>
+        <input type="number" name="densidad" min="50" max="100"
+               step="5" value="100" required>
+      </div>
+
+      <div class="campo">
+        <label>Umbral de suficiencia (₡) — opcional</label>
+        <input type="number" name="umbral" min="0" value="0">
+        <small>Monto mínimo que desea tener al retiro. Dejar en 0 si no aplica.</small>
+      </div>
+
+      <button type="submit" class="btn-primario">Ejecutar simulación →</button>
+    </form>
 {% endblock %}
