@@ -1,8 +1,8 @@
 {% extends 'layout.html' %}
 {% load static %}
 
-{% block titulo %} Resultados {% endblock %}
-    
+{% block titulo %}Resultados{% endblock %}
+
 {% block estilos %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/style_resultados.css' %}" />
 {% endblock %}
@@ -11,5 +11,58 @@
 
 {% block contenido %}
     <h1>Resultados de la Simulación</h1>
-    <p>Bienvenido al simulador de pensiones.</p>
+
+    <!-- Métricas principales -->
+    <div class="metricas">
+      <div class="metrica pesimista">
+        <span class="etiqueta">Pesimista (P5)</span>
+        <span class="valor">₡{{ r.p5|floatformat:0 }}</span>
+      </div>
+      <div class="metrica esperado">
+        <span class="etiqueta">Esperado (P50)</span>
+        <span class="valor">₡{{ r.p50|floatformat:0 }}</span>
+      </div>
+      <div class="metrica optimista">
+        <span class="etiqueta">Optimista (P95)</span>
+        <span class="valor">₡{{ r.p95|floatformat:0 }}</span>
+      </div>
+      {% if r.prob_exito %}
+      <div class="metrica exito">
+        <span class="etiqueta">Prob. de éxito</span>
+        <span class="valor">{{ r.prob_exito }}%</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Parámetros del modelo -->
+    <div class="parametros-modelo">
+      <p>Operadora: <strong>{{ perfil.operadora }}</strong> |
+         μ̂: <strong>{{ r.mu }}%</strong> |
+         σ̂: <strong>{{ r.sigma }}%</strong> |
+         Horizonte: <strong>{{ r.meses }} meses</strong> |
+         Comisión anual sobre saldo: <strong>{{ r.comision }}%</strong></p>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="graficos">
+      <img src="data:image/png;base64,{{ grafico_histograma }}" alt="Distribución de saldos">
+      <img src="data:image/png;base64,{{ grafico_trayectorias }}" alt="Trayectorias del fondo">
+    </div>
+
+    <!-- Lectura en lenguaje cotidiano -->
+    <div class="lectura-resultado">
+      <p>
+        En el escenario esperado, su fondo al retiro rondaría
+        <strong>₡{{ r.p50|floatformat:0 }}</strong> (₡{{ r.p50_real|floatformat:0 }} en colones de hoy).
+        {% if r.prob_exito %}
+          Existe un <strong>{{ r.prob_exito }}%</strong> de probabilidad
+          de superar su umbral de suficiencia.
+        {% endif %}
+        Solo en el 5% de los escenarios el saldo sería menor a
+        <strong>₡{{ r.p5|floatformat:0 }}</strong>.
+      </p>
+    </div>
+
+    <!-- Botón para recalcular -->
+    <a href="{% url 'configurar_perfil' %}" class="btn-secundario">← Modificar perfil</a>
 {% endblock %}
