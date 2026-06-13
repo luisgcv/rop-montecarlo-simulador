@@ -3,21 +3,39 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rop Simulación | {% block titulo %}{% endblock %}</title>
+    <title>Simulador ROP | {% block titulo %}{% endblock %}</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
     {% load static %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/style_layout.css' %}" />
-    
     {% block estilos %}{% endblock %}
 </head>
-<body class="{% block body_class %}fondo-general{% endblock %}">
+<body>
 
-    <main id="contenido">
-        <div class="cajaContenido">
-            {% block contenido %}
-            {% endblock %}
+    <header class="header">
+        <div class="header-izquierda">
+            <div class="logo-circulo"></div>
+            <span class="header-titulo">Simulador ROP — Universidad de Costa Rica</span>
         </div>
-    </main>
+        <span class="header-version">v 1.0 · Beta</span>
+    </header>
 
+    <div class="pagina">
+        <aside class="sidebar">
+            {% block sidebar %}{% endblock %}
+        </aside>
+        <main class="contenido">
+            {% block contenido %}{% endblock %}
+            <footer class="footer">
+                {% block footer_izquierda %}<span>Datos: BCCR · SUPEN (2020 – 2025)<br>Iteraciones Monte Carlo: 10 000</span>{% endblock %}
+                <span class="footer-centro">IF7200 · Métodos Cuantitativos para la Toma de Decisiones · Sede de Occidente · 2026</span>
+                <span class="footer-derecha">{% block footer_derecha %}{% endblock %}</span>
+            </footer>
+        </main>
+    </div>
+
+    {% block scripts %}{% endblock %}
 </body>
 </html>

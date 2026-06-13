@@ -7,62 +7,181 @@
     <link rel="stylesheet" type="text/css" href="{% static 'css/style_resultados.css' %}" />
 {% endblock %}
 
-{% block body_class %}pantalla-resultados{% endblock %}
+{% block sidebar %}
+    <div class="sidebar-heading">Perfil del Afiliado</div>
+
+    <table class="perfil-tabla">
+      <tr><td>Salario bruto</td><td>CRC {{ perfil.salario|floatformat:0 }}</td></tr>
+      <tr><td>Edad actual</td><td>{{ perfil.edad }} años</td></tr>
+      <tr><td>Edad de retiro</td><td>{{ perfil.edad_retiro }} años</td></tr>
+      <tr><td>Saldo inicial</td><td>CRC {{ perfil.saldo|floatformat:0 }}</td></tr>
+      <tr><td>Operadora</td><td>{{ perfil.operadora }}</td></tr>
+      <tr><td>Densidad</td><td>{{ densidad_pct }} %</td></tr>
+    </table>
+
+    <div class="sidebar-subheading">Parámetros del Modelo</div>
+
+    <ul class="modelo-params">
+      <li>
+        <span class="param-label">μ̂ (deriva anual)</span>
+        <span class="param-valor">{{ r.mu }}%</span>
+      </li>
+      <li>
+        <span class="param-label">σ̂ (volatilidad anual)</span>
+        <span class="param-valor">{{ r.sigma }}%</span>
+      </li>
+      <li>
+        <span class="param-label">Iteraciones</span>
+        <span class="param-valor">10 000</span>
+      </li>
+    </ul>
+
+    <a href="{% url 'configurar_perfil' %}" class="btn btn-secundario">← Modificar perfil</a>
+    <button class="btn btn-oscuro" onclick="window.print()">↓ Exportar reporte PDF</button>
+    <a href="{% url 'ejecutar_simulacion' %}" class="btn btn-secundario">↺ Recalcular</a>
+{% endblock %}
 
 {% block contenido %}
-    <h1>Resultados de la Simulación</h1>
-
-    <!-- Métricas principales -->
-    <div class="metricas">
-      <div class="metrica pesimista">
-        <span class="etiqueta">Pesimista (P5)</span>
-        <span class="valor">₡{{ r.p5|floatformat:0 }}</span>
+    <div class="pasos">
+      <div class="paso">
+        <div class="paso-circulo completado">OK</div>
+        <span class="paso-label completado">Configuración</span>
       </div>
-      <div class="metrica esperado">
-        <span class="etiqueta">Esperado (P50)</span>
-        <span class="valor">₡{{ r.p50|floatformat:0 }}</span>
+      <div class="paso-linea completada"></div>
+      <div class="paso">
+        <div class="paso-circulo completado">OK</div>
+        <span class="paso-label completado">Ejecución</span>
       </div>
-      <div class="metrica optimista">
-        <span class="etiqueta">Optimista (P95)</span>
-        <span class="valor">₡{{ r.p95|floatformat:0 }}</span>
+      <div class="paso-linea completada"></div>
+      <div class="paso">
+        <div class="paso-circulo activo">3</div>
+        <span class="paso-label activo">Resultados</span>
       </div>
-      {% if r.prob_exito %}
-      <div class="metrica exito">
-        <span class="etiqueta">Prob. de éxito</span>
-        <span class="valor">{{ r.prob_exito }}%</span>
-      </div>
-      {% endif %}
     </div>
 
-    <!-- Parámetros del modelo -->
-    <div class="parametros-modelo">
-      <p>Operadora: <strong>{{ perfil.operadora }}</strong> |
-         μ̂: <strong>{{ r.mu }}%</strong> |
-         σ̂: <strong>{{ r.sigma }}%</strong> |
-         Horizonte: <strong>{{ r.meses }} meses</strong> |
-         Comisión anual sobre saldo: <strong>{{ r.comision }}%</strong></p>
+    <h1 class="pagina-titulo">Resultados de la simulación</h1>
+    <p class="pagina-subtitulo">
+      Distribución del saldo del ROP al cumplir {{ anio_retiro }} años, expresada en colones constantes (base 2026).
+    </p>
+
+    <!-- Tab bar -->
+    <div class="tab-bar">
+      <button class="tab-btn activo" onclick="showTab('resumen', this)">Resumen</button>
+      <button class="tab-btn" onclick="showTab('distribucion', this)">Distribución</button>
+      <button class="tab-btn" onclick="showTab('trayectorias', this)">Trayectorias</button>
+      <button class="tab-btn" onclick="showTab('detalle', this)">Detalle</button>
     </div>
 
-    <!-- Gráficos -->
-    <div class="graficos">
-      <img src="data:image/png;base64,{{ grafico_histograma }}" alt="Distribución de saldos">
-      <img src="data:image/png;base64,{{ grafico_trayectorias }}" alt="Trayectorias del fondo">
-    </div>
-
-    <!-- Lectura en lenguaje cotidiano -->
-    <div class="lectura-resultado">
-      <p>
-        En el escenario esperado, su fondo al retiro rondaría
-        <strong>₡{{ r.p50|floatformat:0 }}</strong> (₡{{ r.p50_real|floatformat:0 }} en colones de hoy).
+    <!-- TAB: Resumen -->
+    <div id="tab-resumen" class="tab-pane activo">
+      <div class="metricas-grid">
+        <div class="metrica-card pesimista">
+          <div class="metrica-etiqueta">Pesimista – P5</div>
+          <div class="metrica-valor">CRC {{ p5_m }} M</div>
+          <div class="metrica-desc">5% de los escenarios cae por debajo de este saldo.</div>
+        </div>
+        <div class="metrica-card esperado">
+          <div class="metrica-etiqueta">Esperado – P50 (mediana)</div>
+          <div class="metrica-valor">CRC {{ p50_m }} M</div>
+          <div class="metrica-desc">Mediana de las 10 000 trayectorias simuladas.</div>
+        </div>
+        <div class="metrica-card optimista">
+          <div class="metrica-etiqueta">Optimista – P95</div>
+          <div class="metrica-valor">CRC {{ p95_m }} M</div>
+          <div class="metrica-desc">5% de los escenarios supera este saldo.</div>
+        </div>
         {% if r.prob_exito %}
-          Existe un <strong>{{ r.prob_exito }}%</strong> de probabilidad
-          de superar su umbral de suficiencia.
+        <div class="metrica-card exito">
+          <div class="metrica-etiqueta">Probabilidad de Éxito</div>
+          <div class="metrica-valor">{{ r.prob_exito }}%</div>
+          <div class="metrica-desc">P(saldo final &ge; CRC {{ umbral_m }} M) · umbral de suficiencia.</div>
+        </div>
         {% endif %}
-        Solo en el 5% de los escenarios el saldo sería menor a
-        <strong>₡{{ r.p5|floatformat:0 }}</strong>.
-      </p>
+      </div>
+
+      <div class="histograma-titulo">Distribución de saldos finales (10 000 simulaciones)</div>
+      <div class="histograma-subtitulo">
+        Eje X: saldo en millones de colones constantes &nbsp;·&nbsp; Eje Y: frecuencia relativa
+      </div>
+      <div class="histograma-wrapper">
+        <img src="data:image/png;base64,{{ grafico_histograma }}" alt="Distribución de saldos finales">
+      </div>
+
+      <div class="lectura-resultado">
+        <div class="lectura-titulo">Lectura del resultado</div>
+        <div class="lectura-texto">
+          En el escenario esperado su saldo al cumplir {{ anio_retiro }} años rondaría
+          <strong>CRC {{ p50_m }} millones</strong> en colones constantes.
+          {% if r.prob_exito %}
+            Existe un <strong>{{ r.prob_exito }}%</strong> de probabilidad de superar
+            el umbral de CRC {{ umbral_m }} M.
+            Considere posponer la edad de retiro o aportar voluntariamente al ROP.
+          {% endif %}
+        </div>
+      </div>
     </div>
 
-    <!-- Botón para recalcular -->
-    <a href="{% url 'configurar_perfil' %}" class="btn-secundario">← Modificar perfil</a>
+    <!-- TAB: Distribución -->
+    <div id="tab-distribucion" class="tab-pane">
+      <div class="histograma-titulo">Distribución de saldos finales (10 000 simulaciones)</div>
+      <div class="histograma-subtitulo">
+        Eje X: saldo en millones de colones constantes &nbsp;·&nbsp; Eje Y: frecuencia relativa
+      </div>
+      <div class="histograma-wrapper">
+        <img src="data:image/png;base64,{{ grafico_histograma }}" alt="Distribución de saldos finales">
+      </div>
+      <div class="histograma-subtitulo" style="margin-top:8px;">
+        P50 en colones de hoy: <strong>CRC {{ p50_real_m }} M</strong>
+      </div>
+    </div>
+
+    <!-- TAB: Trayectorias -->
+    <div id="tab-trayectorias" class="tab-pane">
+      <div class="histograma-titulo">Evolución del fondo</div>
+      <div class="histograma-subtitulo">100 trayectorias de muestra con la mediana resaltada</div>
+      <div class="histograma-wrapper">
+        <img src="data:image/png;base64,{{ grafico_trayectorias }}" alt="Trayectorias del fondo">
+      </div>
+    </div>
+
+    <!-- TAB: Detalle -->
+    <div id="tab-detalle" class="tab-pane">
+      <div class="histograma-titulo">Estadísticos de la distribución</div>
+      <div class="histograma-subtitulo">Saldos al retiro en millones CRC (colones nominales)</div>
+      <table class="detalle-tabla">
+        <thead>
+          <tr><th>Percentil</th><th>Saldo al retiro</th><th>Descripción</th></tr>
+        </thead>
+        <tbody>
+          <tr class="row-p5"><td>P5 (pesimista)</td><td>CRC {{ p5_m }} M</td><td>Solo el 5% finaliza por debajo</td></tr>
+          <tr><td>P25</td><td>CRC {{ p25_m }} M</td><td>Cuartil inferior</td></tr>
+          <tr class="row-p50"><td>P50 (esperado)</td><td>CRC {{ p50_m }} M</td><td>Mediana — escenario central</td></tr>
+          <tr><td>P75</td><td>CRC {{ p75_m }} M</td><td>Cuartil superior</td></tr>
+          <tr class="row-p95"><td>P95 (optimista)</td><td>CRC {{ p95_m }} M</td><td>Solo el 5% supera este valor</td></tr>
+          <tr><td>P50 real</td><td>CRC {{ p50_real_m }} M</td><td>Mediana deflactada al 3% anual</td></tr>
+        </tbody>
+      </table>
+      <div class="detalle-params">
+        <span>Comisión s/saldo: <strong>{{ r.comision }}%</strong></span>
+        <span>Horizonte: <strong>{{ r.meses }} meses</strong></span>
+        <span>Observaciones históricas: <strong>{{ r.n_obs }}</strong></span>
+      </div>
+    </div>
+{% endblock %}
+
+{% block footer_izquierda %}
+<span>Datos: BCCR · SUPEN (2020 – 2025)<br>Última simulación: {{ ultima_simulacion }}</span>
+{% endblock %}
+
+{% block footer_derecha %}Pantalla 3 / 3 · Análisis de resultados{% endblock %}
+
+{% block scripts %}
+<script>
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-pane').forEach(function(p) { p.classList.remove('activo'); });
+  document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('activo'); });
+  document.getElementById('tab-' + name).classList.add('activo');
+  btn.classList.add('activo');
+}
+</script>
 {% endblock %}

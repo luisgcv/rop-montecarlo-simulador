@@ -10,29 +10,28 @@ RUTA_DATOS = Path(__file__).parent / "data"
 
 def cargar_rendimientos():
     """
-    Lee Rendimientos_Datos.xlsx y retorna DataFrame limpio.
+    Lee Rendimientos_Datos.xlsx.
+    Filtra: tipo == 'REAL', periodicidad == 'ANUAL', excluye entidad 'TOTAL'.
+    NO filtra por codigoregimen — usar todos los regímenes disponibles por operadora.
 
-    Filtros aplicados:
-      - tipo         == 'REAL'        (retornos ya deflactados)
-      - periodicidad == 'ANUAL'       (ventana de 12 meses)
-      - entidad      != 'TOTAL'       (solo operadoras individuales)
-      - codigoregimen == 1            (ROP)
-
-    Retorna columnas: fecha (datetime), entidad (str), rentabilidad (float, decimal)
-    Nota: rentabilidad viene en % → dividir entre 100
+    Si para una operadora no hay datos con esos filtros exactos, el llamador
+    recibirá un array vacío y debe manejar el caso.
     """
     df = pd.read_excel(RUTA_DATOS / "Rendimientos_Datos.xlsx")
 
-    # Filtrar solo lo que el simulador necesita
+    # Normalizar texto para evitar problemas de mayúsculas o espacios
+    df["tipo"]         = df["tipo"].str.strip().str.upper()
+    df["periodicidad"] = df["periodicidad"].str.strip().str.upper()
+    df["entidad"]      = df["entidad"].str.strip()
+
     mask = (
         (df["tipo"] == "REAL") &
         (df["periodicidad"] == "ANUAL") &
-        (df["entidad"] != "TOTAL") &
-        (df["codigoregimen"] == 1)
+        (df["entidad"].str.upper() != "TOTAL")
     )
     df = df[mask].copy()
 
-    df["fecha"] = pd.to_datetime(df["fecha"])
+    df["fecha"]        = pd.to_datetime(df["fecha"])
     df["rentabilidad"] = df["rentabilidad"] / 100   # % → decimal
 
     return df[["fecha", "entidad", "rentabilidad"]].sort_values("fecha").reset_index(drop=True)
@@ -40,29 +39,40 @@ def cargar_rendimientos():
 
 def cargar_comisiones():
     """
-    Lee Comisión_datos.xlsx y retorna la comisión anual sobre SALDO por operadora.
+    Lee Comisión_datos.xlsx y retorna comisión anual sobre el SALDO por operadora.
 
-    Filtros aplicados:
-      - tipo          == 'SALDO'      (el ROP cobra sobre saldo administrado, no sobre aporte)
-      - codigoregimen == 1            (ROP)
-      - fecha más reciente disponible por entidad
+    El ROP cobra comisión sobre SALDO (porcentaje anual del fondo acumulado).
+    Esta comisión se descuenta del drift en el GBM: mu_neta = mu - comision_anual.
 
     Retorna dict: { 'POPULAR': 0.015, 'BCR-PENSION': 0.010, ... }
-    Nota: comisión viene en % → dividir entre 100
+    Si una operadora no tiene dato, usa 0.01 (1% anual como valor conservador).
     """
     df = pd.read_excel(RUTA_DATOS / "Comisión_datos.xlsx")
 
-    mask = (df["tipo"] == "SALDO") & (df["codigoregimen"] == 1)
-    df = df[mask].dropna(subset=["comisión"]).copy()
+    # Normalizar
+    df["tipo"]    = df["tipo"].str.strip().str.upper()
+    df["entidad"] = df["entidad"].str.strip()
 
-    df["fecha"] = pd.to_datetime(df["fecha"])
+    # Usar tipo SALDO (único con datos no-NaN según diagnóstico)
+    df_saldo = df[df["tipo"] == "SALDO"].dropna(subset=["comisión"]).copy()
 
-    # Tomar el registro más reciente por operadora
-    df = df.sort_values("fecha").groupby("entidad").last().reset_index()
+    if df_saldo.empty:
+        # Si no hay ningún dato, retornar comisión por defecto para todas
+        operadoras = df["entidad"].unique().tolist()
+        return {op: 0.01 for op in operadoras}
 
-    df["comisión"] = df["comisión"] / 100   # % → decimal
+    df_saldo["fecha"]    = pd.to_datetime(df_saldo["fecha"])
+    df_saldo["comisión"] = df_saldo["comisión"] / 100   # % → decimal
 
-    return dict(zip(df["entidad"], df["comisión"]))
+    # Tomar el valor más reciente por operadora
+    df_saldo = (
+        df_saldo.sort_values("fecha")
+        .groupby("entidad")
+        .last()
+        .reset_index()
+    )
+
+    return dict(zip(df_saldo["entidad"], df_saldo["comisión"]))
 
 
 def cargar_ipc():
@@ -127,3 +137,19 @@ def listar_operadoras():
     df = pd.read_excel(RUTA_DATOS / "Rendimientos_Datos.xlsx")
     operadoras = sorted(df[df["entidad"] != "TOTAL"]["entidad"].unique().tolist())
     return operadoras
+
+
+def validar_operadora(entidad: str) -> dict:
+    """
+    Verifica si una operadora tiene datos suficientes para simular.
+    Retorna un dict con el diagnóstico para mostrar en caso de error.
+    """
+    df = cargar_rendimientos()
+    datos_op = df[df["entidad"] == entidad]["rentabilidad"].dropna()
+
+    return {
+        "tiene_datos":       len(datos_op) > 0,
+        "n_obs":             len(datos_op),
+        "entidad":           entidad,
+        "todas_entidades":   sorted(df["entidad"].unique().tolist()),
+    }

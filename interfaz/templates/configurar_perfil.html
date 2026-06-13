@@ -1,44 +1,53 @@
 {% extends 'layout.html' %}
 {% load static %}
 
-{% block titulo %}Configurar perfil{% endblock %}
+{% block titulo %}Perfil del Asegurado{% endblock %}
 
 {% block estilos %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/style_perfil.css' %}" />
 {% endblock %}
 
-{% block body_class %}pantalla-perfil{% endblock %}
+{% block sidebar %}
+    <div class="sidebar-heading">Configuración del Perfil</div>
 
-{% block contenido %}
-    <h1>Configurar perfil</h1>
-
-    <form method="post">
+    <form method="post" id="form-perfil">
       {% csrf_token %}
 
       <div class="campo">
-        <label>Salario bruto mensual (₡)</label>
-        <input type="number" name="salario" min="200000" max="5000000"
+        <label>Salario bruto mensual (CRC)</label>
+        <input type="number" name="salario" id="f-salario" min="200000" max="5000000"
                step="50000" value="850000" required>
+        <span class="campo-ayuda">Base del aporte obligatorio del 4,25%</span>
       </div>
 
       <div class="campo">
-        <label>Edad actual</label>
-        <input type="number" name="edad" min="18" max="64" value="35" required>
+        <label>Edad actual &nbsp;<span class="slider-valor" id="disp-edad">35</span></label>
+        <div class="slider-fila">
+          <span class="slider-min">18</span>
+          <input type="range" name="edad" id="f-edad" min="18" max="65" value="35"
+                 oninput="document.getElementById('disp-edad').textContent=this.value;actualizarResumen()">
+          <span class="slider-max">65</span>
+        </div>
       </div>
 
       <div class="campo">
-        <label>Edad de retiro proyectada</label>
-        <input type="number" name="edad_retiro" min="55" max="70" value="65" required>
+        <label>Edad de retiro proyectada &nbsp;<span class="slider-valor" id="disp-retiro">65</span></label>
+        <div class="slider-fila">
+          <span class="slider-min">55</span>
+          <input type="range" name="edad_retiro" id="f-retiro" min="55" max="70" value="65"
+                 oninput="document.getElementById('disp-retiro').textContent=this.value;actualizarResumen()">
+          <span class="slider-max">70</span>
+        </div>
       </div>
 
       <div class="campo">
-        <label>Saldo acumulado actual (₡)</label>
-        <input type="number" name="saldo" min="0" value="0" required>
+        <label>Saldo acumulado actual (CRC)</label>
+        <input type="number" name="saldo" id="f-saldo" min="0" value="0" required>
       </div>
 
       <div class="campo">
         <label>Operadora de pensiones</label>
-        <select name="operadora" required>
+        <select name="operadora" id="f-operadora" required onchange="actualizarResumen()">
           {% for op in operadoras %}
             <option value="{{ op }}">{{ op }}</option>
           {% endfor %}
@@ -46,17 +55,173 @@
       </div>
 
       <div class="campo">
-        <label>Densidad de cotización (% de meses cotizados al año)</label>
-        <input type="number" name="densidad" min="50" max="100"
-               step="5" value="100" required>
+        <label>Densidad de cotización &nbsp;<span class="slider-valor" id="disp-densidad">100</span> %</label>
+        <div class="slider-fila">
+          <span class="slider-min">50</span>
+          <input type="range" name="densidad" id="f-densidad" min="50" max="100" step="5" value="100"
+                 oninput="document.getElementById('disp-densidad').textContent=this.value;actualizarResumen()">
+          <span class="slider-max">100</span>
+        </div>
       </div>
 
       <div class="campo">
-        <label>Umbral de suficiencia (₡) — opcional</label>
-        <input type="number" name="umbral" min="0" value="0">
-        <small>Monto mínimo que desea tener al retiro. Dejar en 0 si no aplica.</small>
+        <label>Umbral de suficiencia (CRC)</label>
+        <input type="number" name="umbral" id="f-umbral" min="0" value="0">
+        <span class="campo-ayuda">Opcional. Monto mínimo deseado al retiro.</span>
       </div>
 
-      <button type="submit" class="btn-primario">Ejecutar simulación →</button>
+      <button type="submit" class="btn btn-primario">Ejecutar simulación</button>
     </form>
+{% endblock %}
+
+{% block contenido %}
+    <div class="pasos">
+      <div class="paso">
+        <div class="paso-circulo activo">1</div>
+        <span class="paso-label activo">Configuración</span>
+      </div>
+      <div class="paso-linea activa"></div>
+      <div class="paso">
+        <div class="paso-circulo pendiente">2</div>
+        <span class="paso-label pendiente">Ejecución</span>
+      </div>
+      <div class="paso-linea pendiente"></div>
+      <div class="paso">
+        <div class="paso-circulo pendiente">3</div>
+        <span class="paso-label pendiente">Resultados</span>
+      </div>
+    </div>
+
+    <h1 class="pagina-titulo">Configure su perfil de afiliado</h1>
+    <p class="pagina-subtitulo">
+      Complete los parámetros en la barra lateral. La simulación proyecta su saldo del Régimen Obligatorio
+      de Pensiones Complementarias (ROP) usando datos reales del BCCR y la SUPEN.
+    </p>
+
+    {% if error %}
+    <div class="alerta-error">
+      <strong>Error en la simulación:</strong> {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Resumen dinámico del perfil -->
+    <div class="resumen-perfil">
+      <div class="resumen-heading">Resumen del perfil configurado</div>
+      <div class="resumen-col">
+        <div class="resumen-etiqueta">Salario bruto mensual</div>
+        <div class="resumen-valor" id="res-salario">CRC 850 000</div>
+        <div class="resumen-sub" id="res-aporte">Aporte mensual ROP: CRC 36 125</div>
+      </div>
+      <div class="resumen-col">
+        <div class="resumen-etiqueta">Horizonte de proyección</div>
+        <div class="resumen-valor" id="res-horizonte">30 años</div>
+        <div class="resumen-sub" id="res-pasos">360 pasos mensuales</div>
+      </div>
+      <div class="resumen-col">
+        <div class="resumen-etiqueta">Saldo inicial S(0)</div>
+        <div class="resumen-valor" id="res-saldo">CRC 0</div>
+        <div class="resumen-sub">Reportado por SUPEN</div>
+      </div>
+      <div class="resumen-col">
+        <div class="resumen-etiqueta">Operadora</div>
+        <div class="resumen-valor" id="res-operadora">—</div>
+        <div class="resumen-sub" id="res-comision">Comisión admin.: —</div>
+      </div>
+    </div>
+
+    <div class="caja-info">
+      <div class="archivos-cargados">Archivos Excel cargados desde el directorio /data/</div>
+      <div class="archivos-links">
+        <span>Rendimientos_OPC.xlsx</span>
+        <span class="archivos-sep">·</span>
+        <span>IPC.xlsx</span>
+        <span class="archivos-sep">·</span>
+        <span>TBP.xlsx</span>
+        <span class="archivos-sep">·</span>
+        <span>Comisiones_OPC.xlsx</span>
+      </div>
+    </div>
+
+    <div class="card calidad-card">
+      <div class="card-heading">Calidad de los datos históricos</div>
+      <ul class="calidad-lista">
+        <li>Cobertura de la serie de rendimientos: <strong>72 meses</strong> (enero 2020 – diciembre 2025).</li>
+        <li>Sin observaciones faltantes después de la limpieza. Variación interanual del IPC actualizada al cierre de 2025.</li>
+        <li id="calidad-params">Parámetros estimados: cargando…</li>
+      </ul>
+    </div>
+
+    <div class="privacidad">
+      <div class="privacidad-titulo">Privacidad</div>
+      <div class="privacidad-texto">Sus datos personales no se almacenan. Toda la simulación se ejecuta localmente en su sesión.</div>
+    </div>
+
+    <div class="hint-ejecutar">
+      Cuando termine de configurar el perfil, presione
+      <strong>Ejecutar simulación</strong>
+      en la barra lateral.
+    </div>
+{% endblock %}
+
+{% block footer_derecha %}Pantalla 1 / 3 · Configuración{% endblock %}
+
+{% block scripts %}
+<script>
+const PARAMS = {{ params_json|safe }};
+
+function fmtNum(n) {
+  return Math.round(n).toLocaleString('es-CR');
+}
+
+function actualizarResumen() {
+  const salario   = parseFloat(document.getElementById('f-salario').value)  || 0;
+  const edad      = parseInt(document.getElementById('f-edad').value)        || 35;
+  const retiro    = parseInt(document.getElementById('f-retiro').value)       || 65;
+  const saldo     = parseFloat(document.getElementById('f-saldo').value)     || 0;
+  const operadora = document.getElementById('f-operadora').value;
+  const densidad  = parseInt(document.getElementById('f-densidad').value)    || 100;
+
+  const horizonte = Math.max(0, retiro - edad);
+  const pasos     = horizonte * 12;
+  const aporte    = salario * 0.0425 * (densidad / 100);
+
+  document.getElementById('res-salario').textContent   = 'CRC ' + fmtNum(salario);
+  document.getElementById('res-aporte').textContent    = 'Aporte mensual ROP: CRC ' + fmtNum(aporte);
+  document.getElementById('res-horizonte').textContent = horizonte + ' años';
+  document.getElementById('res-pasos').textContent     = pasos + ' pasos mensuales';
+  document.getElementById('res-saldo').textContent     = 'CRC ' + fmtNum(saldo);
+  document.getElementById('res-operadora').textContent = operadora || '—';
+
+  const p = PARAMS[operadora];
+  if (p) {
+    document.getElementById('res-comision').textContent =
+      'Comisión admin.: ' + p.comision.toFixed(2).replace('.', ',') + '%';
+    document.getElementById('calidad-params').innerHTML =
+      'Parámetros estimados: <span class="param-destacado">μ = ' + p.mu.toFixed(2).replace('.', ',') + '% anual</span>' +
+      ' &nbsp;|&nbsp; <span class="param-destacado">σ = ' + p.sigma.toFixed(2).replace('.', ',') + '% anual</span>' +
+      ' (log-retornos).';
+  } else {
+    document.getElementById('res-comision').textContent = 'Comisión admin.: —';
+    document.getElementById('calidad-params').textContent = 'Parámetros estimados: sin datos.';
+  }
+}
+
+document.getElementById('f-salario').addEventListener('input', actualizarResumen);
+document.getElementById('f-saldo').addEventListener('input', actualizarResumen);
+
+function syncSliderFill(el) {
+  const pct = ((parseFloat(el.value) - parseFloat(el.min)) /
+               (parseFloat(el.max)   - parseFloat(el.min))) * 100;
+  el.style.setProperty('--pct', pct + '%');
+}
+document.querySelectorAll('input[type=range]').forEach(function(el) {
+  syncSliderFill(el);
+  el.addEventListener('input', function() { syncSliderFill(el); });
+});
+
+window.addEventListener('DOMContentLoaded', function() {
+  actualizarResumen();
+  document.querySelectorAll('input[type=range]').forEach(syncSliderFill);
+});
+</script>
 {% endblock %}
