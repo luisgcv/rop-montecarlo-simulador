@@ -1,10 +1,11 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
+    {% load static %}
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Simulador ROP | {% block titulo %}{% endblock %}</title>
-
+    <link rel="icon" type="image/png" href="{% static 'img/logo_v4.png' %}">    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
@@ -16,7 +17,9 @@
 
     <header class="header">
         <div class="header-izquierda">
-            <div class="logo-circulo"></div>
+            <div class="logo-circulo">
+                  <img src="{% static 'img/logo_v4_sin_fondo.png' %}" alt="Logo" />
+            </div>
             <span class="header-titulo">Simulador ROP — Universidad de Costa Rica</span>
         </div>
         <span class="header-version">v 1.0 · Beta</span>
