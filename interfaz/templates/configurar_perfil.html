@@ -12,6 +12,12 @@
 {% block contenido %}
     <h1>Configurar perfil</h1>
 
+    {% if error %}
+    <div class="alerta-error">
+      <strong>Error en la simulación:</strong> {{ error }}
+    </div>
+    {% endif %}
+
     <form method="post">
       {% csrf_token %}
 

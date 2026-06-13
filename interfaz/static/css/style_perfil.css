@@ -1,0 +1,8 @@
+.alerta-error {
+  background-color: #FFEBEE;
+  border-left: 4px solid #D32F2F;
+  color: #B71C1C;
+  padding: 12px 16px;
+  margin-bottom: 20px;
+  border-radius: 4px;
+}
