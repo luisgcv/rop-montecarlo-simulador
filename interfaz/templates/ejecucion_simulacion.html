@@ -1,15 +1,162 @@
 {% extends 'layout.html' %}
 {% load static %}
 
-{% block titulo %}Ejecutar simulación {% endblock %}
+{% block titulo %}Ejecutando simulación{% endblock %}
 
 {% block estilos %}
     <link rel="stylesheet" type="text/css" href="{% static 'css/style_simulacion.css' %}" />
+    <meta http-equiv="refresh" content="2;url={{ redirect_url }}">
 {% endblock %}
 
-{% block body_class %}pantalla-ejecucion{% endblock %}
+{% block sidebar %}
+    <div class="sidebar-heading">Perfil Configurado</div>
+
+    <div class="data-card">
+        <div class="data-card-etiqueta">Salario bruto</div>
+        <div class="data-card-valor">CRC {{ perfil.salario|floatformat:0 }}</div>
+    </div>
+    <div class="data-cards-fila">
+        <div class="data-card">
+            <div class="data-card-etiqueta">Edad</div>
+            <div class="data-card-valor">{{ perfil.edad }} años</div>
+        </div>
+        <div class="data-card">
+            <div class="data-card-etiqueta">Retiro</div>
+            <div class="data-card-valor">{{ perfil.edad_retiro }} años</div>
+        </div>
+    </div>
+    <div class="data-card">
+        <div class="data-card-etiqueta">Saldo inicial</div>
+        <div class="data-card-valor">CRC {{ perfil.saldo|floatformat:0 }}</div>
+    </div>
+    <div class="data-card">
+        <div class="data-card-etiqueta">Operadora</div>
+        <div class="data-card-valor">{{ perfil.operadora }}</div>
+    </div>
+    <div class="data-card">
+        <div class="data-card-etiqueta">Densidad cotización</div>
+        <div class="data-card-valor">{% widthratio perfil.densidad 1 100 %} %</div>
+    </div>
+
+    <a href="{% url 'configurar_perfil' %}" class="btn btn-secundario">← Modificar perfil</a>
+    <button class="btn btn-peligro" disabled>Detener simulación</button>
+{% endblock %}
 
 {% block contenido %}
-    <h1>Ejecutar simulación</h1>
-    <p>Configura los parámetros de la simulación y ejecútala aquí.</p>
+    <div class="pasos">
+      <div class="paso">
+        <div class="paso-circulo completado">OK</div>
+        <span class="paso-label completado">Configuración</span>
+      </div>
+      <div class="paso-linea completada"></div>
+      <div class="paso">
+        <div class="paso-circulo activo">2</div>
+        <span class="paso-label activo">Ejecución</span>
+      </div>
+      <div class="paso-linea pendiente"></div>
+      <div class="paso">
+        <div class="paso-circulo pendiente">3</div>
+        <span class="paso-label pendiente">Resultados</span>
+      </div>
+    </div>
+
+    <h1 class="pagina-titulo">Ejecutando la simulación Monte Carlo</h1>
+    <p class="pagina-subtitulo">
+      Generando 10 000 trayectorias del Movimiento Browniano Geométrico sobre un horizonte de {{ meses }} meses.
+    </p>
+
+    <div class="card progreso-card">
+      <div class="progreso-cabecera">
+        <span class="progreso-titulo">Progreso del cálculo</span>
+        <span class="progreso-porcentaje" id="pct-txt">78 %</span>
+      </div>
+      <div class="progreso-track">
+        <div class="progreso-fill" id="barra" style="width: 78%"></div>
+      </div>
+
+      <ul class="etapas-lista">
+        <li class="etapa">
+          <div class="etapa-icono ok">OK</div>
+          <span class="etapa-texto">Carga de archivos Excel locales (BCCR – SUPEN)</span>
+          <span class="etapa-tiempo">0,42 s</span>
+        </li>
+        <li class="etapa">
+          <div class="etapa-icono ok">OK</div>
+          <span class="etapa-texto">Limpieza de series y estimación de parámetros (μ, σ)</span>
+          <span class="etapa-tiempo">0,18 s</span>
+        </li>
+        <li class="etapa">
+          <div class="etapa-icono proceso"></div>
+          <span class="etapa-texto">Generación vectorizada de trayectorias (10 000 × {{ meses }})</span>
+          <span class="etapa-tiempo proceso">en proceso…</span>
+        </li>
+        <li class="etapa pendiente">
+          <div class="etapa-icono pendiente"></div>
+          <span class="etapa-texto">Cálculo de percentiles y probabilidad de éxito</span>
+          <span class="etapa-tiempo pendiente">pendiente</span>
+        </li>
+      </ul>
+    </div>
+
+    <div class="dos-columnas">
+      <div class="card">
+        <div class="card-heading">Parámetros del modelo MBG</div>
+        <table class="param-tabla">
+          <tr><td>Deriva anualizada (μ)</td><td>{{ mu }} %</td></tr>
+          <tr><td>Volatilidad anualizada (σ)</td><td>{{ sigma }} %</td></tr>
+          <tr><td>Paso temporal (Δt)</td><td>1 / 12 &nbsp;(mensual)</td></tr>
+          <tr><td>Iteraciones (N)</td><td>10 000</td></tr>
+          <tr><td>Pasos por trayectoria (T)</td><td>{{ meses }}</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <div class="card-heading">Vista previa en tiempo real</div>
+        <p style="font-size:11px;color:var(--texto-gris);margin-bottom:8px;">
+          Muestra de 25 trayectorias (rojo: pesimista, azul: esperado, verde: optimista)
+        </p>
+        {% if grafico_preview %}
+          <div class="grafico-preview">
+            <img src="data:image/png;base64,{{ grafico_preview }}" alt="Vista previa de trayectorias">
+          </div>
+        {% else %}
+          <div class="grafico-preview-placeholder"><span>Generando trayectorias…</span></div>
+        {% endif %}
+      </div>
+    </div>
+
+    <div class="caja-advertencia">
+      <div class="caja-advertencia-titulo">Cálculo intensivo</div>
+      <div class="caja-advertencia-texto">
+        No cierre la pestaña del navegador. La simulación se ejecuta en memoria y dura entre 4 y 9 segundos según el horizonte.
+      </div>
+    </div>
+{% endblock %}
+
+{% block footer_derecha %}Pantalla 2 / 3 · Ejecución{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  var bar   = document.getElementById('barra');
+  var pct   = document.getElementById('pct-txt');
+  var etapa = document.querySelector('.etapa-icono.proceso');
+  var etapaTexto = document.querySelector('.etapa-tiempo.proceso');
+  var current = 78;
+  var iv = setInterval(function() {
+    current += 2;
+    if (current >= 100) {
+      current = 100;
+      clearInterval(iv);
+      if (etapa)      { etapa.className = 'etapa-icono ok'; etapa.textContent = 'OK'; }
+      if (etapaTexto) { etapaTexto.className = 'etapa-tiempo'; etapaTexto.textContent = '—'; }
+      var last  = document.querySelectorAll('.etapa-icono.pendiente')[0];
+      var lastT = document.querySelectorAll('.etapa-tiempo.pendiente')[0];
+      if (last)  { last.className = 'etapa-icono proceso'; }
+      if (lastT) { lastT.className = 'etapa-tiempo proceso'; lastT.textContent = 'en proceso…'; }
+    }
+    bar.style.width = current + '%';
+    pct.textContent = current + ' %';
+  }, 40);
+})();
+</script>
 {% endblock %}

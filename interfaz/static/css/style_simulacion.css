@@ -1,0 +1,136 @@
+/* ══════════════════════════════════════════════════════
+   SIDEBAR: DATA-CARDS DEL PERFIL RESUMIDO
+══════════════════════════════════════════════════════ */
+.data-card {
+  background: var(--fondo-card);
+  border: 1px solid var(--borde);
+  border-radius: 6px;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+}
+.data-card-etiqueta {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.9px;
+  text-transform: uppercase;
+  color: var(--texto-gris);
+  margin-bottom: 3px;
+}
+.data-card-valor {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--texto-dark);
+  line-height: 1.3;
+}
+.data-cards-fila {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+/* ══════════════════════════════════════════════════════
+   BARRA DE PROGRESO
+══════════════════════════════════════════════════════ */
+.progreso-card { margin-bottom: 16px; }
+
+.progreso-cabecera {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+.progreso-titulo     { font-size: 16px; font-weight: 700; color: var(--texto-dark); }
+.progreso-porcentaje { font-size: 26px; font-weight: 800; color: var(--ucr-azul); line-height: 1; }
+
+.progreso-track {
+  width: 100%;
+  height: 8px;
+  background: #D8E3ED;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.progreso-fill {
+  height: 100%;
+  background: linear-gradient(to right, var(--navy) 0%, var(--ucr-azul) 100%);
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+/* ══════════════════════════════════════════════════════
+   LISTA DE ETAPAS
+══════════════════════════════════════════════════════ */
+.etapas-lista { list-style: none; padding: 0; }
+
+.etapa {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid #F0F4F8;
+}
+.etapa:last-child { border-bottom: none; }
+
+.etapa-icono {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.3px;
+  flex-shrink: 0;
+}
+.etapa-icono.ok        { background: var(--verde); color: white; }
+.etapa-icono.proceso   { background: var(--ucr-azul); color: white;
+                          animation: pulso 1.2s ease-in-out infinite; }
+.etapa-icono.pendiente { background: white; border: 2px solid #C8D3DF; color: #C8D3DF; }
+
+@keyframes pulso {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.65; transform: scale(0.95); }
+}
+
+.etapa-texto                  { flex: 1; font-size: 13px; color: var(--texto-dark); line-height: 1.45; }
+.etapa.pendiente .etapa-texto { color: #A8B4C0; }
+
+.etapa-tiempo           { font-size: 12px; color: var(--texto-gris); font-family: 'Courier New', monospace; min-width: 72px; text-align: right; }
+.etapa-tiempo.proceso   { color: var(--ucr-azul); font-weight: 600; }
+.etapa-tiempo.pendiente { color: #C8D3DF; }
+
+/* ══════════════════════════════════════════════════════
+   DOS COLUMNAS: PARÁMETROS + VISTA PREVIA
+══════════════════════════════════════════════════════ */
+.dos-columnas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.param-tabla             { width: 100%; border-collapse: collapse; }
+.param-tabla tr          { border-bottom: 1px solid var(--borde); }
+.param-tabla tr:last-child { border-bottom: none; }
+.param-tabla td          { padding: 9px 0; font-size: 13px; }
+.param-tabla td:first-child { color: var(--texto-gris); }
+.param-tabla td:last-child  { text-align: right; font-weight: 700; color: var(--texto-dark); }
+
+/* ══════════════════════════════════════════════════════
+   GRÁFICA PREVIEW
+══════════════════════════════════════════════════════ */
+.grafico-preview     { width: 100%; border-radius: 4px; margin-top: 8px; }
+.grafico-preview img { width: 100%; height: auto; display: block; border-radius: 4px; }
+
+.grafico-preview-placeholder {
+  width: 100%;
+  height: 130px;
+  background: var(--fondo-card);
+  border-radius: 4px;
+  margin-top: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--texto-gris);
+  font-size: 13px;
+  animation: pulso 1.5s ease-in-out infinite;
+  border: 1px solid var(--borde);
+}
