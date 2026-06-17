@@ -23,7 +23,7 @@ def estimar_parametros(rentabilidades_anuales: np.ndarray) -> dict:
     if len(r) == 0:
         raise ValueError(
             "No hay datos de rentabilidad para esta operadora con los filtros aplicados. "
-            "Verifica que la operadora tenga datos en el archivo Rendimientos_Datos.xlsx."
+            "Verifica que la operadora tenga datos en el archivo Rendimientos_OPC.xlsx."
         )
 
     sigma = float(np.std(r, ddof=1))

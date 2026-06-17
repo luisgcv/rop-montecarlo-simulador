@@ -10,14 +10,14 @@ RUTA_DATOS = Path(__file__).parent / "data"
 
 def cargar_rendimientos():
     """
-    Lee Rendimientos_Datos.xlsx.
+    Lee Rendimientos_OPC.xlsx.
     Filtra: tipo == 'REAL', periodicidad == 'ANUAL', excluye entidad 'TOTAL'.
     NO filtra por codigoregimen — usar todos los regímenes disponibles por operadora.
 
     Si para una operadora no hay datos con esos filtros exactos, el llamador
     recibirá un array vacío y debe manejar el caso.
     """
-    df = pd.read_excel(RUTA_DATOS / "Rendimientos_Datos.xlsx")
+    df = pd.read_excel(RUTA_DATOS / "Rendimientos_OPC.xlsx")
 
     # Normalizar texto para evitar problemas de mayúsculas o espacios
     df["tipo"]         = df["tipo"].str.strip().str.upper()
@@ -47,7 +47,7 @@ def cargar_comisiones():
     Retorna dict: { 'POPULAR': 0.015, 'BCR-PENSION': 0.010, ... }
     Si una operadora no tiene dato, usa 0.01 (1% anual como valor conservador).
     """
-    df = pd.read_excel(RUTA_DATOS / "Comisión_datos.xlsx")
+    df = pd.read_excel(RUTA_DATOS / "Comisiones_OPC.xlsx")
 
     # Normalizar
     df["tipo"]    = df["tipo"].str.strip().str.upper()
@@ -86,7 +86,7 @@ def cargar_ipc():
     Nota: variación mensual viene en % → dividir entre 100
     """
     df = pd.read_excel(
-        RUTA_DATOS / "Índice de precios al consumidor (IPC).xlsx",
+        RUTA_DATOS / "IPC.xlsx",
         skiprows=4
     )
 
@@ -112,7 +112,7 @@ def cargar_tbp():
     Nota: tasa viene en % → dividir entre 100
     """
     df = pd.read_excel(
-        RUTA_DATOS / "Tasa Básica Pasiva (TBP).xlsx",
+        RUTA_DATOS / "TBP.xlsx",
         skiprows=4
     )
 
@@ -134,7 +134,7 @@ def cargar_tbp():
 
 def listar_operadoras():
     """Retorna lista de operadoras disponibles en los datos de rendimientos."""
-    df = pd.read_excel(RUTA_DATOS / "Rendimientos_Datos.xlsx")
+    df = pd.read_excel(RUTA_DATOS / "Rendimientos_OPC.xlsx")
     operadoras = sorted(df[df["entidad"] != "TOTAL"]["entidad"].unique().tolist())
     return operadoras
 
