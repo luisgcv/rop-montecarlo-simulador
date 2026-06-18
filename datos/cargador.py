@@ -1,13 +1,23 @@
 # datos/cargador.py
 # Funciones para leer y limpiar los 4 archivos Excel del proyecto.
+#
+# NOTA DE RENDIMIENTO (Render / memoria limitada):
+# Los datos de los Excel no cambian entre peticiones, así que se cachean
+# en memoria con lru_cache para evitar volver a leer y procesar los archivos
+# con pandas en cada visita a la página. Esto reduce el uso de CPU/memoria
+# por petición, lo cual es crítico en planes con poca RAM (ej. Render Free).
+#
+# Si alguna vez actualizas los archivos Excel en el servidor, necesitas
+# reiniciar el proceso (manual deploy / restart) para que se vuelvan a leer,
+# ya que el cache vive en memoria mientras el proceso esté corriendo.
 
-import pandas as pd
-import numpy as np
+from functools import lru_cache
 from pathlib import Path
 
 RUTA_DATOS = Path(__file__).parent / "data"
 
 
+@lru_cache(maxsize=1)
 def cargar_rendimientos():
     """
     Lee Rendimientos_Datos.xlsx.
@@ -16,7 +26,12 @@ def cargar_rendimientos():
 
     Si para una operadora no hay datos con esos filtros exactos, el llamador
     recibirá un array vacío y debe manejar el caso.
+
+    Resultado cacheado en memoria (no vuelve a leer el Excel en llamadas
+    posteriores dentro del mismo proceso).
     """
+    import pandas as pd  # import diferido: reduce memoria al arrancar el proceso
+
     df = pd.read_excel(RUTA_DATOS / "Rendimientos_Datos.xlsx")
 
     # Normalizar texto para evitar problemas de mayúsculas o espacios
@@ -37,6 +52,7 @@ def cargar_rendimientos():
     return df[["fecha", "entidad", "rentabilidad"]].sort_values("fecha").reset_index(drop=True)
 
 
+@lru_cache(maxsize=1)
 def cargar_comisiones():
     """
     Lee Comisión_datos.xlsx y retorna comisión anual sobre el SALDO por operadora.
@@ -46,7 +62,12 @@ def cargar_comisiones():
 
     Retorna dict: { 'POPULAR': 0.015, 'BCR-PENSION': 0.010, ... }
     Si una operadora no tiene dato, usa 0.01 (1% anual como valor conservador).
+
+    Resultado cacheado en memoria (no vuelve a leer el Excel en llamadas
+    posteriores dentro del mismo proceso).
     """
+    import pandas as pd  # import diferido: reduce memoria al arrancar el proceso
+
     df = pd.read_excel(RUTA_DATOS / "Comisión_datos.xlsx")
 
     # Normalizar
@@ -75,6 +96,7 @@ def cargar_comisiones():
     return dict(zip(df_saldo["entidad"], df_saldo["comisión"]))
 
 
+@lru_cache(maxsize=1)
 def cargar_ipc():
     """
     Lee IPC.xlsx (tiene 4 filas de encabezado BCCR → skiprows=4).
@@ -84,7 +106,12 @@ def cargar_ipc():
 
     Retorna DataFrame con columnas: fecha (datetime), var_mensual (float, decimal)
     Nota: variación mensual viene en % → dividir entre 100
+
+    Resultado cacheado en memoria (no vuelve a leer el Excel en llamadas
+    posteriores dentro del mismo proceso).
     """
+    import pandas as pd  # import diferido: reduce memoria al arrancar el proceso
+
     df = pd.read_excel(
         RUTA_DATOS / "Índice de precios al consumidor (IPC).xlsx",
         skiprows=4
@@ -100,6 +127,7 @@ def cargar_ipc():
     return df[["fecha", "var_mensual"]].sort_values("fecha").reset_index(drop=True)
 
 
+@lru_cache(maxsize=1)
 def cargar_tbp():
     """
     Lee 'Tasa Básica Pasiva (TBP).xlsx' (tiene 4 filas de encabezado BCCR → skiprows=4).
@@ -110,7 +138,12 @@ def cargar_tbp():
 
     Retorna DataFrame con columnas: fecha (datetime, fin de mes), tbp (float, decimal)
     Nota: tasa viene en % → dividir entre 100
+
+    Resultado cacheado en memoria (no vuelve a leer el Excel en llamadas
+    posteriores dentro del mismo proceso).
     """
+    import pandas as pd  # import diferido: reduce memoria al arrancar el proceso
+
     df = pd.read_excel(
         RUTA_DATOS / "Tasa Básica Pasiva (TBP).xlsx",
         skiprows=4
@@ -132,11 +165,18 @@ def cargar_tbp():
     return df
 
 
+@lru_cache(maxsize=1)
 def listar_operadoras():
-    """Retorna lista de operadoras disponibles en los datos de rendimientos."""
+    """
+    Retorna lista de operadoras disponibles en los datos de rendimientos.
+    Resultado cacheado en memoria (no vuelve a leer el Excel en llamadas
+    posteriores dentro del mismo proceso).
+    """
+    import pandas as pd  # import diferido: reduce memoria al arrancar el proceso
+
     df = pd.read_excel(RUTA_DATOS / "Rendimientos_Datos.xlsx")
     operadoras = sorted(df[df["entidad"] != "TOTAL"]["entidad"].unique().tolist())
-    return operadoras
+    return tuple(operadoras)  # tuple para que sea hasheable / cacheable
 
 
 def validar_operadora(entidad: str) -> dict:

@@ -1,11 +1,15 @@
 # interfaz/views.py
+#
+# NOTA DE RENDIMIENTO (Render / memoria limitada):
+# numpy y matplotlib se importan DENTRO de cada función que los usa,
+# no al cargar el módulo. Esto evita que el proceso de Gunicorn cargue
+# estas librerías pesadas en el momento de resolver las urls (que pasa
+# en cada arranque del worker), reduciendo el riesgo de quedarse sin
+# memoria (SIGKILL / OOM) en planes con poca RAM.
+
 import io
 import json
 import base64
-import numpy as np
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
 from datetime import datetime
 
 from django.shortcuts import render, redirect
@@ -24,6 +28,8 @@ COLOR_UMBRAL    = "#00ABE8"
 
 
 def _figura_a_base64(fig):
+    import matplotlib.pyplot as plt  # import diferido
+
     buf = io.BytesIO()
     fig.savefig(buf, format="png", bbox_inches="tight", dpi=120)
     buf.seek(0)
@@ -78,6 +84,8 @@ def configurar_perfil(request):
 # ── PANTALLA 2: Ejecución de la simulación ───────────────────────────────────
 
 def ejecutar_simulacion(request):
+    import numpy as np  # import diferido
+
     perfil = request.session.get("perfil")
     if not perfil:
         return redirect("configurar_perfil")
@@ -140,6 +148,8 @@ def ejecutar_simulacion(request):
         return redirect("configurar_perfil")
 
     # ── Mini preview chart ────────────────────────────────────────────────────
+    import matplotlib.pyplot as plt  # import diferido
+
     idx_prev = np.random.choice(S.shape[0], min(25, S.shape[0]), replace=False)
     fig_prev, ax_prev = plt.subplots(figsize=(4.5, 2.5))
     fig_prev.patch.set_facecolor("white")
@@ -180,6 +190,9 @@ def ejecutar_simulacion(request):
 # ── PANTALLA 3: Análisis de resultados ───────────────────────────────────────
 
 def mostrar_resultados(request):
+    import numpy as np  # import diferido
+    import matplotlib.pyplot as plt  # import diferido
+
     resultados = request.session.get("resultados")
     perfil     = request.session.get("perfil")
 
