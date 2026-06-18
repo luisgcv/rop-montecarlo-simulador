@@ -84,14 +84,19 @@ WSGI_APPLICATION = 'sistema_pensiones.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/6.0/ref/settings/#databases
+# Database configuration: prefer DATABASE_URL (Render managed DB). Fall back to sqlite for quick deploys.
+if os.environ.get('DATABASE_URL'):
+    DATABASES = {
+        'default': dj_database_url.config(conn_max_age=600)
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
-DATABASES = {
-    'default': dj_database_url.config(
-        # Replace this value with your local database's connection string.
-        default='postgresql://postgres:postgres@localhost:5432/sistema_pensiones',
-        conn_max_age=600
-    )
-}
 
 
 # Password validation
