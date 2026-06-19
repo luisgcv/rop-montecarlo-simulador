@@ -171,6 +171,7 @@ def ejecutar_simulacion(request):
         "sigma":           round(params["sigma"] * 100, 2),
         "comision":        round(comision * 100, 2),
         "meses":           meses,
+        "anios":           meses // 12,
         "n_obs":           params["n_obs"],
         "grafico_preview": grafico_preview,
         "redirect_url":    reverse("mostrar_resultados"),
@@ -276,6 +277,7 @@ def mostrar_resultados(request):
         "p50_real_m":        _m(resultados["p50_real"]),
         "umbral_m":          _m(perfil["umbral"]) if perfil["umbral"] > 0 else None,
         "anio_retiro":       perfil["edad_retiro"],
+        "anios_retiro":      perfil["edad_retiro"] - perfil["edad"],
         "densidad_pct":      round(perfil["densidad"] * 100),
         "ultima_simulacion": ultima_simulacion,
     })

@@ -115,7 +115,7 @@
       <div class="resumen-col">
         <div class="resumen-etiqueta">Horizonte de proyección</div>
         <div class="resumen-valor" id="res-horizonte">30 años</div>
-        <div class="resumen-sub" id="res-pasos">360 pasos mensuales</div>
+        <div class="resumen-sub" id="res-pasos">30 pasos anuales</div>
       </div>
       <div class="resumen-col">
         <div class="resumen-etiqueta">Saldo inicial S(0)</div>
@@ -181,13 +181,12 @@ function actualizarResumen() {
   const densidad  = parseInt(document.getElementById('f-densidad').value)    || 100;
 
   const horizonte = Math.max(0, retiro - edad);
-  const pasos     = horizonte * 12;
   const aporte    = salario * 0.0425 * (densidad / 100);
 
   document.getElementById('res-salario').textContent   = 'CRC ' + fmtNum(salario);
   document.getElementById('res-aporte').textContent    = 'Aporte mensual ROP: CRC ' + fmtNum(aporte);
   document.getElementById('res-horizonte').textContent = horizonte + ' años';
-  document.getElementById('res-pasos').textContent     = pasos + ' pasos mensuales';
+  document.getElementById('res-pasos').textContent     = horizonte + ' pasos anuales';
   document.getElementById('res-saldo').textContent     = 'CRC ' + fmtNum(saldo);
   document.getElementById('res-operadora').textContent = operadora || '—';
 
