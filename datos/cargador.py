@@ -1,5 +1,7 @@
 # datos/cargador.py
-# Funciones para leer y limpiar los 4 archivos Excel del proyecto.
+# Lectura y limpieza de los cuatro archivos Excel que alimentan la simulación.
+# Todos los datos provienen de fuentes oficiales: BCCR (Banco Central de Costa
+# Rica) y SUPEN (Superintendencia de Pensiones). Los archivos residen en datos/data/.
 
 import pandas as pd
 import numpy as np
@@ -10,16 +12,23 @@ RUTA_DATOS = Path(__file__).parent / "data"
 
 def cargar_rendimientos():
     """
-    Lee Rendimientos_OPC.xlsx.
-    Filtra: tipo == 'REAL', periodicidad == 'ANUAL', excluye entidad 'TOTAL'.
-    NO filtra por codigoregimen — usar todos los regímenes disponibles por operadora.
+    Lee los rendimientos históricos del ROP desde Rendimientos_OPC.xlsx (SUPEN).
 
-    Si para una operadora no hay datos con esos filtros exactos, el llamador
-    recibirá un array vacío y debe manejar el caso.
+    El archivo contiene varias combinaciones de tipo y periodicidad. Solo se
+    usan los registros con tipo='REAL' (deflactados por inflación) y
+    periodicidad='ANUAL', que son los comparables entre operadoras y los que
+    tiene sentido usar como insumo del GBM. La fila 'TOTAL' es un agregado
+    del sistema, no una operadora, por lo que se excluye.
+
+    Si una operadora no tiene registros que cumplan esos filtros, el llamador
+    recibirá un array vacío y debe manejar ese caso mostrando un error claro
+    al usuario (ver ejecutar_simulacion en views.py).
+
+    Retorna DataFrame con columnas: fecha, entidad, rentabilidad (decimal).
     """
     df = pd.read_excel(RUTA_DATOS / "Rendimientos_OPC.xlsx")
 
-    # Normalizar texto para evitar problemas de mayúsculas o espacios
+    # Normalizar texto para evitar problemas por mayúsculas o espacios al filtrar
     df["tipo"]         = df["tipo"].str.strip().str.upper()
     df["periodicidad"] = df["periodicidad"].str.strip().str.upper()
     df["entidad"]      = df["entidad"].str.strip()
@@ -39,32 +48,36 @@ def cargar_rendimientos():
 
 def cargar_comisiones():
     """
-    Lee Comisión_datos.xlsx y retorna comisión anual sobre el SALDO por operadora.
+    Lee las comisiones administrativas de cada operadora desde
+    Comisiones_OPC.xlsx (SUPEN).
 
-    El ROP cobra comisión sobre SALDO (porcentaje anual del fondo acumulado).
-    Esta comisión se descuenta del drift en el GBM: mu_neta = mu - comision_anual.
+    En el ROP, las operadoras cobran su comisión como un porcentaje anual
+    sobre el saldo acumulado del afiliado (no sobre el aporte mensual). Esto
+    significa que reduce directamente el rendimiento neto que el fondo obtiene.
+    En el modelo GBM se descuenta del drift: mu_neta = mu - comision_anual.
+
+    El archivo registra distintos tipos de comisión, pero solo 'SALDO' tiene
+    valores válidos según el diagnóstico de los datos. Se usa el dato más
+    reciente disponible por operadora para reflejar la tarifa vigente.
 
     Retorna dict: { 'POPULAR': 0.015, 'BCR-PENSION': 0.010, ... }
-    Si una operadora no tiene dato, usa 0.01 (1% anual como valor conservador).
+    Si falta el dato de una operadora, se asume 1% anual como valor conservador.
     """
     df = pd.read_excel(RUTA_DATOS / "Comisiones_OPC.xlsx")
 
-    # Normalizar
     df["tipo"]    = df["tipo"].str.strip().str.upper()
     df["entidad"] = df["entidad"].str.strip()
 
-    # Usar tipo SALDO (único con datos no-NaN según diagnóstico)
     df_saldo = df[df["tipo"] == "SALDO"].dropna(subset=["comisión"]).copy()
 
     if df_saldo.empty:
-        # Si no hay ningún dato, retornar comisión por defecto para todas
         operadoras = df["entidad"].unique().tolist()
         return {op: 0.01 for op in operadoras}
 
     df_saldo["fecha"]    = pd.to_datetime(df_saldo["fecha"])
     df_saldo["comisión"] = df_saldo["comisión"] / 100   # % → decimal
 
-    # Tomar el valor más reciente por operadora
+    # Quedarse con el registro más reciente por operadora
     df_saldo = (
         df_saldo.sort_values("fecha")
         .groupby("entidad")
@@ -77,20 +90,20 @@ def cargar_comisiones():
 
 def cargar_ipc():
     """
-    Lee IPC.xlsx (tiene 4 filas de encabezado BCCR → skiprows=4).
+    Lee el Índice de Precios al Consumidor desde IPC.xlsx (BCCR).
 
-    Columnas reales del Excel (después de skiprows):
-      Fecha | Nivel | IPC, variación mensual (%) | IPC, variación interanual (%) | Variación acumulada (%)
+    El archivo del BCCR incluye 4 filas de metadatos antes de los datos, por
+    eso se omiten con skiprows=4. La variación mensual del IPC se usa como
+    proxy de la inflación para convertir saldos nominales futuros a colones
+    de hoy (poder adquisitivo constante).
 
-    Retorna DataFrame con columnas: fecha (datetime), var_mensual (float, decimal)
-    Nota: variación mensual viene en % → dividir entre 100
+    Retorna DataFrame con columnas: fecha (datetime), var_mensual (decimal).
     """
     df = pd.read_excel(
         RUTA_DATOS / "IPC.xlsx",
         skiprows=4
     )
 
-    # Renombrar columnas a nombres simples
     df.columns = ["fecha", "nivel", "var_mensual", "var_interanual", "var_acumulada"]
 
     df = df.dropna(subset=["fecha"]).copy()
@@ -102,14 +115,14 @@ def cargar_ipc():
 
 def cargar_tbp():
     """
-    Lee 'Tasa Básica Pasiva (TBP).xlsx' (tiene 4 filas de encabezado BCCR → skiprows=4).
-    Frecuencia diaria → promediar a mensual para alinear con los demás datos.
+    Lee la Tasa Básica Pasiva desde TBP.xlsx (BCCR).
 
-    Columnas reales del Excel (después de skiprows):
-      Fecha | Tasa básica pasiva calculada por el BCCR
+    La TBP es la tasa de referencia del sistema financiero costarricense,
+    publicada diariamente por el BCCR. El archivo tiene 4 filas de metadatos
+    al inicio (skiprows=4) y frecuencia diaria, por lo que se promedia a
+    frecuencia mensual para alinearla con los demás datos de la simulación.
 
-    Retorna DataFrame con columnas: fecha (datetime, fin de mes), tbp (float, decimal)
-    Nota: tasa viene en % → dividir entre 100
+    Retorna DataFrame con columnas: fecha (fin de mes), tbp (decimal).
     """
     df = pd.read_excel(
         RUTA_DATOS / "TBP.xlsx",
@@ -121,7 +134,7 @@ def cargar_tbp():
     df["fecha"] = pd.to_datetime(df["fecha"])
     df["tbp"] = df["tbp"] / 100   # % → decimal
 
-    # Colapsar de diario a mensual (promedio)
+    # Colapsar de frecuencia diaria a mensual tomando el promedio de cada mes
     df = (
         df.set_index("fecha")
         .resample("ME")["tbp"]
@@ -133,7 +146,7 @@ def cargar_tbp():
 
 
 def listar_operadoras():
-    """Retorna lista de operadoras disponibles en los datos de rendimientos."""
+    """Retorna la lista de operadoras con datos disponibles en Rendimientos_OPC.xlsx."""
     df = pd.read_excel(RUTA_DATOS / "Rendimientos_OPC.xlsx")
     operadoras = sorted(df[df["entidad"] != "TOTAL"]["entidad"].unique().tolist())
     return operadoras
@@ -141,15 +154,16 @@ def listar_operadoras():
 
 def validar_operadora(entidad: str) -> dict:
     """
-    Verifica si una operadora tiene datos suficientes para simular.
-    Retorna un dict con el diagnóstico para mostrar en caso de error.
+    Verifica si una operadora tiene datos suficientes para ejecutar la simulación.
+    Útil para dar mensajes de error descriptivos cuando el filtro de
+    cargar_rendimientos() no retorna nada para la operadora seleccionada.
     """
     df = cargar_rendimientos()
     datos_op = df[df["entidad"] == entidad]["rentabilidad"].dropna()
 
     return {
-        "tiene_datos":       len(datos_op) > 0,
-        "n_obs":             len(datos_op),
-        "entidad":           entidad,
-        "todas_entidades":   sorted(df["entidad"].unique().tolist()),
+        "tiene_datos":     len(datos_op) > 0,
+        "n_obs":           len(datos_op),
+        "entidad":         entidad,
+        "todas_entidades": sorted(df["entidad"].unique().tolist()),
     }
