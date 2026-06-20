@@ -115,7 +115,7 @@
       <div class="resumen-col">
         <div class="resumen-etiqueta">Horizonte de proyección</div>
         <div class="resumen-valor" id="res-horizonte">30 años</div>
-        <div class="resumen-sub" id="res-pasos">360 pasos mensuales</div>
+        <div class="resumen-sub" id="res-pasos">30 pasos anuales</div>
       </div>
       <div class="resumen-col">
         <div class="resumen-etiqueta">Saldo inicial S(0)</div>
@@ -145,8 +145,7 @@
     <div class="card calidad-card">
       <div class="card-heading">Calidad de los datos históricos</div>
       <ul class="calidad-lista">
-        <li>Cobertura de la serie de rendimientos: <strong>72 meses</strong> (enero 2020 – diciembre 2025).</li>
-        <li>Sin observaciones faltantes después de la limpieza. Variación interanual del IPC actualizada al cierre de 2025.</li>
+        <li>Sin observaciones faltantes después de la limpieza de la serie de rendimientos.</li>
         <li id="calidad-params">Parámetros estimados: cargando…</li>
       </ul>
     </div>
@@ -182,13 +181,12 @@ function actualizarResumen() {
   const densidad  = parseInt(document.getElementById('f-densidad').value)    || 100;
 
   const horizonte = Math.max(0, retiro - edad);
-  const pasos     = horizonte * 12;
   const aporte    = salario * 0.0425 * (densidad / 100);
 
   document.getElementById('res-salario').textContent   = 'CRC ' + fmtNum(salario);
   document.getElementById('res-aporte').textContent    = 'Aporte mensual ROP: CRC ' + fmtNum(aporte);
   document.getElementById('res-horizonte').textContent = horizonte + ' años';
-  document.getElementById('res-pasos').textContent     = pasos + ' pasos mensuales';
+  document.getElementById('res-pasos').textContent     = horizonte + ' pasos anuales';
   document.getElementById('res-saldo').textContent     = 'CRC ' + fmtNum(saldo);
   document.getElementById('res-operadora').textContent = operadora || '—';
 

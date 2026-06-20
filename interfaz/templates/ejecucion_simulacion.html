@@ -39,7 +39,6 @@
     </div>
 
     <a href="{% url 'configurar_perfil' %}" class="btn btn-secundario">← Modificar perfil</a>
-    <button class="btn btn-peligro" disabled>Detener simulación</button>
 {% endblock %}
 
 {% block contenido %}
@@ -62,7 +61,7 @@
 
     <h1 class="pagina-titulo">Ejecutando la simulación Monte Carlo</h1>
     <p class="pagina-subtitulo">
-      Generando 10 000 trayectorias del Movimiento Browniano Geométrico sobre un horizonte de {{ meses }} meses.
+      Generando 10 000 trayectorias del Movimiento Browniano Geométrico sobre un horizonte de {{ anios }} años.
     </p>
 
     <div class="card progreso-card">
@@ -87,7 +86,7 @@
         </li>
         <li class="etapa">
           <div class="etapa-icono proceso"></div>
-          <span class="etapa-texto">Generación vectorizada de trayectorias (10 000 × {{ meses }})</span>
+          <span class="etapa-texto">Generación vectorizada de trayectorias (10 000 × {{ anios }})</span>
           <span class="etapa-tiempo proceso">en proceso…</span>
         </li>
         <li class="etapa pendiente">
@@ -104,9 +103,9 @@
         <table class="param-tabla">
           <tr><td>Deriva anualizada (μ)</td><td>{{ mu }} %</td></tr>
           <tr><td>Volatilidad anualizada (σ)</td><td>{{ sigma }} %</td></tr>
-          <tr><td>Paso temporal (Δt)</td><td>1 / 12 &nbsp;(mensual)</td></tr>
+          <tr><td>Paso temporal (Δt)</td><td>1 &nbsp;(anual)</td></tr>
           <tr><td>Iteraciones (N)</td><td>10 000</td></tr>
-          <tr><td>Pasos por trayectoria (T)</td><td>{{ meses }}</td></tr>
+          <tr><td>Pasos por trayectoria (T)</td><td>{{ anios }}</td></tr>
         </table>
       </div>
       <div class="card">
