@@ -37,7 +37,6 @@
     </ul>
 
     <a href="{% url 'configurar_perfil' %}" class="btn btn-secundario">← Modificar perfil</a>
-    <button class="btn btn-oscuro" onclick="window.print()">↓ Exportar reporte PDF</button>
     <a href="{% url 'ejecutar_simulacion' %}" class="btn btn-secundario">↺ Recalcular</a>
 {% endblock %}
 
@@ -163,14 +162,14 @@
       </table>
       <div class="detalle-params">
         <span>Comisión s/saldo: <strong>{{ r.comision }}%</strong></span>
-        <span>Horizonte: <strong>{{ r.meses }} meses</strong></span>
+        <span>Horizonte: <strong>{{ anios_retiro }} años</strong></span>
         <span>Observaciones históricas: <strong>{{ r.n_obs }}</strong></span>
       </div>
     </div>
 {% endblock %}
 
 {% block footer_izquierda %}
-<span>Datos: BCCR · SUPEN (2020 – 2025)<br>Última simulación: {{ ultima_simulacion }}</span>
+<span>Datos: BCCR · SUPEN (2020 - 2025)<br>Última simulación: {{ ultima_simulacion }}</span>
 {% endblock %}
 
 {% block footer_derecha %}Pantalla 3 / 3 · Análisis de resultados{% endblock %}
