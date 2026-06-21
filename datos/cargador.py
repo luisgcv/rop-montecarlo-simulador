@@ -8,6 +8,16 @@ import numpy as np
 from pathlib import Path
 
 RUTA_DATOS = Path(__file__).parent / "data"
+# Al final del archivo, después de todas las funciones
+import functools
+
+@functools.lru_cache(maxsize=None)
+def _cache_rendimientos():
+    return cargar_rendimientos()
+
+@functools.lru_cache(maxsize=None)  
+def _cache_comisiones():
+    return cargar_comisiones()
 
 def cargar_rendimientos():
     """
